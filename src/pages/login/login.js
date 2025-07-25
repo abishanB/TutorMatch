@@ -1,3 +1,14 @@
+/**
+ * Group Members: Nevathan, Liyu, Adrian, Abishan
+ * Date: April 20, 2025
+ *
+ * login component for TutorMatch.
+ * Handles user login via email or Google login.
+ * On successful Google auth, decodes token and proceeds to profile creation.
+ * Renders either the login form or the CreateProfile component based on the current step.
+ */
+
+
 import React, { useState } from "react";
 import "./login.css";
 import { GoogleLogin } from "@react-oauth/google";
@@ -5,6 +16,15 @@ import { jwtDecode } from "jwt-decode";
 import tutorImage from "./tutorImage.jpg";
 import { useNavigate } from "react-router-dom";
 
+/**
+ * Handles user login via email/password or Google OAuth.
+ *
+ * @param {Object} props
+ * @param {Function} props.setIsLoggedIn - Updates app state when login is successful.
+ * @param {Function} props.setUserProfile - Stores the logged-in user's profile information.
+ *
+ * @returns {JSX.Element} Login form with OAuth integration and error handling.
+ */
 export default function Login({ setIsLoggedIn, setUserProfile }) {
   const navigate = useNavigate();
   const [loginForm, setLoginForm] = useState({
@@ -13,7 +33,11 @@ export default function Login({ setIsLoggedIn, setUserProfile }) {
   });
   const [errorMessage, setErrorMessage] = useState(""); // State to hold error messages
 
-  // Handles input change for the login form fields (email, password)
+  /**
+   * Handles input changes for login form fields.
+   *
+   * @param {Object} e - The event object from the input field.
+   */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setLoginForm((prev) => ({
@@ -22,11 +46,17 @@ export default function Login({ setIsLoggedIn, setUserProfile }) {
     }));
   };
 
-  // Handles form submission for regular login (email/password)
+  /**
+   * Submits the login form using email and password credentials.
+   *
+   * @param {Event} e - The form submission event.
+   * @async
+   * @returns {void}
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost/tutorMatch/server/login/", {
+      const response = await fetch("https://cs1xd3.cas.mcmaster.ca/~xiaol31/TutorMatch/server/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -39,7 +69,7 @@ export default function Login({ setIsLoggedIn, setUserProfile }) {
         setIsLoggedIn(true);
         setUserProfile(loginResult.user_profile);
         setErrorMessage("");
-        localStorage.setItem("tutorMatch-email", loginResult.user_profile.email); 
+        localStorage.setItem("userEmail", loginResult.user_profile.email); 
 
         return;
       }
@@ -49,14 +79,21 @@ export default function Login({ setIsLoggedIn, setUserProfile }) {
     }
   };
 
-  // Handles successful Google login and sends the email to the server
+  /**
+   * Handles successful Google login by decoding the token and sending
+   * the user email to the backend for authentication.
+   *
+   * @param {Object} guathResponse - Google OAuth response object containing the JWT token.
+   * @async
+   * @returns {void}
+  */
   const handleLoginSuccess = async (guathResponse) => {
     const token = guathResponse.credential;
     const userGoogleInfo = jwtDecode(token);
     const googleEmail = {email: userGoogleInfo.email}
     
     try {
-      const response = await fetch("http://localhost/tutorMatch/server/login/googleLogin.php", {
+      const response = await fetch("https://cs1xd3.cas.mcmaster.ca/~xiaol31/TutorMatch/server/login/googleLogin.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -70,7 +107,7 @@ export default function Login({ setIsLoggedIn, setUserProfile }) {
         setIsLoggedIn(true);
         setUserProfile(loginResult.user_profile);
         setErrorMessage("");
-        localStorage.setItem("tutorMatch-email", loginResult.user_profile.email); 
+        localStorage.setItem("userEmail", loginResult.user_profile.email); 
         return;
       }
       setErrorMessage("Incorrect email or password");
@@ -79,7 +116,11 @@ export default function Login({ setIsLoggedIn, setUserProfile }) {
     }
   }
 
-  // Handles failed Google login attempt
+  /**
+   * Logs error details when Google login fails.
+   *
+   * @param {Object} error - Google login error object.
+   */
   const handleLoginFailure = (error) => {
     console.error("Google login error:", error);
   };
@@ -148,3 +189,33 @@ export default function Login({ setIsLoggedIn, setUserProfile }) {
     </div>
   );
 }
+
+/** if (!response.ok) {
+  if (result.redirect) {
+    setEmailStatus({
+      type: "info",
+      message: "Authentication required. Redirecting to Google login...",
+    });
+
+    const authWindow = window.open("https://cs1xd3.cas.mcmaster.ca/~xiaol31/TutorMatch/server/authenticate.php", "googleAuth", "width=600,height=600");
+
+    const checkAuthWindow = setInterval(() => {
+      if (authWindow.closed) {
+        clearInterval(checkAuthWindow);
+        setEmailStatus({
+          type: "info",
+          message: "Authentication completed. Trying to send email again...",
+        });
+        setTimeout(() => {
+          handleSendEmail();
+        }, 1000);
+      }
+    }, 500);
+  } else {
+    setEmailStatus({
+      type: "error",
+      message: result.error || "Failed to send email. Please try again.",
+    });
+  }
+  return;
+} **/

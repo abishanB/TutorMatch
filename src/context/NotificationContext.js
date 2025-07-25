@@ -1,54 +1,52 @@
-import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+/* 
+GroupName: WebFusion 
+GroupMembers: Nevathan, Adrian, Liyu, Abishan
+Date: 2025-04-23
 
-// Create a context for notifications
+Description: This file provides a NotificationContext and related functionality 
+to manage notifications and toast alerts in a React application. The NotificationProvider 
+component manages the state for notifications, unread counts, and sound preferences, 
+while offering methods to add, remove, mark as read, and clear notifications. It also 
+handles the playback of notification sounds based on user preferences and interacts 
+with local storage to persist the sound setting. Additionally, the file provides a 
+custom hook (useNotifications) to access and manipulate notifications within other 
+components of the application.
+*/
+
+
+import React, { createContext, useState, useContext, useEffect } from 'react';
+
 const NotificationContext = createContext();
 
 // Custom hook to access notifications context
 export const useNotifications = () => useContext(NotificationContext);
 
-// NotificationProvider component to provide notification functionality
+
+/**
+ * Provides global notification context to the application.
+ *
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - The child components that will consume the context.
+ *
+ * @returns {JSX.Element} Notification context provider wrapping all children components.
+ */
 export const NotificationProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState([]);  // State for storing notifications
-  const [toasts, setToasts] = useState([]);  // State for storing toast notifications
-  const [unreadCount, setUnreadCount] = useState(0);  // State for unread notifications count
-  const [soundEnabled, setSoundEnabled] = useState(true);  // State for whether sound is enabled
-  const audioRef = useRef(null);  // Ref for audio element
-  const [audioInitialized, setAudioInitialized] = useState(false);  // State to track if audio is initialized
+  const [notifications, setNotifications] = useState([]);
+  const [toasts, setToasts] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   
-  // Initialize audio only after user interaction and store sound preference
-  useEffect(() => {
-    const storedSoundPreference = localStorage.getItem('notificationSoundEnabled');
-    if (storedSoundPreference !== null) {
-      setSoundEnabled(storedSoundPreference === 'true');
-    }
-    
-    // Initialize audio element but do not load the source yet
-    audioRef.current = new Audio();
-    audioRef.current.volume = 0.5;
-    
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
   
-  // Function to initialize audio after user interaction
-  const initializeAudio = () => {
-    if (!audioInitialized && audioRef.current) {
-      audioRef.current.src = '/notification-sound.mp3';  // Set the audio source only after user interaction
-      setAudioInitialized(true);
-    }
-  };
-  
-  // Update unread notifications count whenever notifications change
   useEffect(() => {
     const count = notifications.filter(notification => !notification.read).length;
     setUnreadCount(count);
   }, [notifications]);
-  
-  // Function to add a new notification
+
+  /**
+   * Adds a new notification to the list and triggers a toast and optional sound.
+   *
+   * @param {Object} notification - The notification object (title, message, type).
+   * @returns {void}
+   */
   const addNotification = (notification) => {
     const newNotification = {
       id: Date.now().toString(),
@@ -58,60 +56,67 @@ export const NotificationProvider = ({ children }) => {
     };
     
     setNotifications(prev => [newNotification, ...prev]);
-    
-    // Play notification sound if enabled and audio is initialized
-    if (soundEnabled && audioInitialized && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.log('Audio playback was prevented by the browser:', error);
-        });
-      }
-    }
-    
-    // Add the notification as a toast
+
+
     addToast(newNotification);
   };
   
-  // Function to mark a notification as read
+  /**
+   * Marks a single notification as read.
+   *
+   * @param {string} id - The ID of the notification to mark as read.
+   * @returns {void}
+   */
+
   const markAsRead = (id) => {
-    setNotifications(prev => 
-      prev.map(notification => 
+    setNotifications(prev =>
+      prev.map(notification =>
         notification.id === id ? { ...notification, read: true } : notification
       )
     );
   };
-  
-  // Function to mark all notifications as read
+
+  /**
+   * Marks all notifications as read.
+   *
+   * @returns {void}
+   */
+
   const markAllAsRead = () => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(notification => ({ ...notification, read: true }))
     );
   };
-  
-  // Function to remove a notification
+
+  /**
+    * Removes a specific notification from the list.
+    *
+    * @param {string} id - The ID of the notification to remove.
+    * @returns {void}
+    */
   const removeNotification = (id) => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.filter(notification => notification.id !== id)
     );
   };
-  
-  // Function to clear all notifications
+
+  /**
+   * Clears all stored notifications.
+   *
+   * @returns {void}
+   */
   const clearAllNotifications = () => {
     setNotifications([]);
   };
+
   
-  // Function to toggle sound settings
-  const toggleSound = () => {
-    initializeAudio();
-    const newSoundEnabled = !soundEnabled;
-    setSoundEnabled(newSoundEnabled);
-    localStorage.setItem('notificationSoundEnabled', newSoundEnabled.toString());
-  };
-  
-  // Function to add a toast notification
+
+  /**
+   * Adds a new toast notification to the UI.
+   *
+   * @param {Object} notification - The notification to convert into a toast.
+   * @returns {void}
+   */
   const addToast = (notification) => {
     const toast = {
       id: notification.id || Date.now().toString(),
@@ -121,31 +126,34 @@ export const NotificationProvider = ({ children }) => {
       autoClose: true,
       autoCloseDuration: 5000
     };
-    
+
     setToasts(prev => [...prev, toast]);
   };
-  
-  // Function to remove a toast notification
+
+  /**
+   * Removes a toast by ID.
+   *
+   * @param {string} id - The ID of the toast to remove.
+   * @returns {void}
+   */
+
   const removeToast = (id) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
-  
+
   return (
-    <NotificationContext.Provider 
+    <NotificationContext.Provider
       value={{
         notifications,
         unreadCount,
-        soundEnabled,
         addNotification,
         markAsRead,
         markAllAsRead,
         removeNotification,
         clearAllNotifications,
-        toggleSound,
         toasts,
         addToast,
         removeToast,
-        initializeAudio 
       }}
     >
       {children}

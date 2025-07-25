@@ -1,4 +1,13 @@
-/* src/pages/inbox/inbox.css */
+/**
+ * File: src/pages/inbox/inbox.css
+ * Date: 2025-04-24
+ * Team: WebFusion
+ * Team Members: Nevathan, Liyu, Adrian, Abishan
+ *
+ * Description:
+ * Styles for the Inbox page layout, match cards, modals, and responsiveness.
+ */
+
 .inbox-container {
   max-width: 1200px;
   margin: 0 auto;
